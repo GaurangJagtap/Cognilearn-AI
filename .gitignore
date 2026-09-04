@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Environment Variables & Databases
+.env
+*.db
+*.sqlite3
+
+# Storage & Large Generated Media Assets
+storage/generated_avatars/*
+storage/generated_audio/*
+storage/generated_visuals/*
+storage/extracted_images/*
+storage/uploads/*
+!storage/.gitkeep
+
+# IDE & System
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

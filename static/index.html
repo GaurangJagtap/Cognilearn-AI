@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Learning Platform — Intelligent Adaptive Education</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f3ff',
+              100: '#e0e7ff',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-sky-50/70 text-slate-800 min-h-screen flex flex-col font-sans antialiased selection:bg-sky-200 selection:text-sky-900">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-sky-50/90 backdrop-blur-md border-b border-sky-200/80 sticky top-0 z-50 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('upload')">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-sky-200 group-hover:scale-105 transition-transform">
+          <i data-lucide="book-open" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            AI Learning Platform
+            <span class="px-2 py-0.5 text-[10px] font-extrabold bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-full uppercase tracking-wider shadow-xs pulse-badge">Pro</span>
+          </h1>
+          <p class="text-xs text-sky-800/70 font-medium">Personalized Adaptive Curriculum System</p>
+        </div>
+      </div>
+
+      <!-- Navigation Bar -->
+      <nav class="hidden md:flex items-center space-x-1 p-1.5 bg-sky-100/90 rounded-xl border border-sky-200/80 shadow-inner">
+        <button onclick="switchView('upload')" id="nav-upload" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 bg-white text-sky-900 shadow-sm border border-sky-300">
+          <i data-lucide="file-text" class="w-4 h-4 text-sky-600"></i> Course Setup
+        </button>
+        <button onclick="switchView('player')" id="nav-player" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-sky-700 hover:bg-sky-50/80">
+          <i data-lucide="play-circle" class="w-4 h-4"></i> Lesson Studio
+        </button>
+        <button onclick="switchView('quiz')" id="nav-quiz" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-sky-700 hover:bg-sky-50/80">
+          <i data-lucide="help-circle" class="w-4 h-4"></i> Assessment
+        </button>
+        <button onclick="switchView('report')" id="nav-report" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-sky-700 hover:bg-sky-50/80">
+          <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Performance Analytics
+        </button>
+        <button onclick="switchView('profile')" id="nav-profile" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-sky-700 hover:bg-sky-50/80">
+          <i data-lucide="user" class="w-4 h-4"></i> Learner Profile
+        </button>
+        <button onclick="switchView('bonus')" id="nav-bonus" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-sky-700 hover:bg-sky-50/80">
+          <i data-lucide="layers" class="w-4 h-4"></i> Study Tools
+        </button>
+      </nav>
+
+      <!-- Status Indicator & User Auth Button -->
+      <div class="flex items-center space-x-3">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200/80 text-xs font-semibold shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>System Online</span>
+        </div>
+        <button onclick="openAuthModal()" id="header-user-btn" class="btn-primary px-4 py-2 rounded-xl text-xs font-semibold shadow-md flex items-center gap-2">
+          <i data-lucide="user-check" class="w-4 h-4"></i> <span id="header-user-name">Login / Register</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- VIEW 1: UPLOAD & SETUP -->
+    <section id="view-upload" class="view-panel space-y-6 animate-fade-in">
+      <div class="glass-card interactive-card p-6 sm:p-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+              Course Material Ingestion & Configuration
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">Upload textbook documents or enter curriculum notes to generate a structured lesson.</p>
+          </div>
+          <button onclick="loadSampleLesson()" class="px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors shadow-xs">
+            <i data-lucide="file-code" class="w-4 h-4 text-sky-600"></i> Load Sample Curriculum: Electricity
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div class="lg:col-span-2 space-y-4">
+            <!-- Dropzone -->
+            <div id="drop-zone" class="border-2 border-dashed border-sky-300 hover:border-sky-500 bg-sky-50/50 hover:bg-sky-100/60 rounded-2xl p-6 text-center transition-all cursor-pointer">
+              <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.pptx,.txt" onchange="handleFileSelected(event)">
+              <div class="flex flex-col items-center justify-center space-y-2" onclick="document.getElementById('file-input').click()">
+                <div class="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-700">
+                  <i data-lucide="upload" class="w-5 h-5"></i>
+                </div>
+                <div class="text-xs font-medium text-slate-700">
+                  <span class="text-sky-600 font-semibold hover:underline">Click to upload document</span> or drag and drop file here
+                </div>
+                <p class="text-[11px] text-slate-500">Supports PDF, DOCX, PPTX, TXT (Maximum file size: 50MB)</p>
+                <div id="file-badge" class="hidden mt-2 px-3 py-1 bg-sky-100 border border-sky-300 rounded-md text-xs text-sky-900 font-mono"></div>
+              </div>
+            </div>
+
+            <!-- Text Input -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-sky-900/80 mb-2">Curriculum Notes & Syllabus Context</label>
+              <textarea id="raw-text-input" rows="7" placeholder="Enter topic overview, key definitions, or textbook excerpt..." class="w-full bg-white/90 border border-sky-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 transition-all font-mono leading-relaxed shadow-xs"></textarea>
+            </div>
+          </div>
+
+          <!-- Configuration Panel -->
+          <div class="bg-sky-50/80 p-5 rounded-2xl border border-sky-200/80 space-y-4 shadow-xs">
+            <h3 class="text-xs font-bold text-sky-950 uppercase tracking-wider flex items-center gap-2 border-b border-sky-200 pb-3">
+              <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i> Lesson Parameters
+            </h3>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Topic / Chapter Title</label>
+              <input type="text" id="param-topic" value="Chapter 4: Electricity & Magnetism" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-600">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Target Learner Level</label>
+              <select id="param-level" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-600">
+                <option value="beginner" selected>Beginner (Foundational Concepts)</option>
+                <option value="intermediate">Intermediate (Conceptual & Analytical)</option>
+                <option value="advanced">Advanced (Mathematical & Rigorous)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Instruction Language</label>
+              <select id="param-lang" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-600">
+                <option value="en" selected>English</option>
+                <option value="hi">Hindi (हिंदी)</option>
+                <option value="es">Spanish (Español)</option>
+                <option value="fr">French (Français)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Target Duration</label>
+              <select id="param-time" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-600">
+                <option value="5">5 Minutes (Summary Session)</option>
+                <option value="20" selected>20 Minutes (Standard Module)</option>
+                <option value="60">60 Minutes (Comprehensive Masterclass)</option>
+              </select>
+            </div>
+
+            <button onclick="startLessonGeneration()" id="btn-generate-plan" class="btn-primary w-full mt-4 py-2.5 rounded-xl font-semibold text-xs shadow-md flex items-center justify-center gap-2">
+              <i data-lucide="play" class="w-4 h-4"></i> Generate & Open Studio
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: LESSON PLAYER STUDIO -->
+    <section id="view-player" class="view-panel hidden space-y-6 animate-fade-in">
+      <div class="glass-card interactive-card p-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span id="player-badge-lang" class="px-2 py-0.5 bg-sky-100/80 text-sky-800 border border-sky-300/80 rounded-md text-[11px] font-mono">EN</span>
+            <span id="player-badge-level" class="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200/80 rounded-md text-[11px] font-medium">Beginner</span>
+            <span id="player-badge-time" class="px-2 py-0.5 bg-sky-100/80 text-sky-800 border border-sky-300/80 rounded-md text-[11px] font-medium">20 Mins</span>
+          </div>
+          <h2 id="player-lesson-title" class="text-lg font-bold text-slate-900">Chapter 4: Electricity & Magnetism</h2>
+          <p id="player-lesson-topic" class="text-xs text-sky-800/70">Electric Current and Ohm's Law</p>
+        </div>
+
+        <div class="flex items-center space-x-2" id="section-nav-pills"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Visual Stage (7 Cols) -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="glass-card interactive-card p-5 flex flex-col h-[520px]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div class="flex items-center gap-2">
+                <span id="visual-type-badge" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-300 flex items-center gap-1.5">
+                  <i data-lucide="layout" class="w-3.5 h-3.5"></i> Diagram Mode
+                </span>
+                <span id="current-concept-heading" class="text-xs font-bold text-slate-800">Electric Current and Voltage</span>
+              </div>
+              <div class="text-xs text-slate-500 flex items-center gap-1" id="visual-mode-indicator">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-sky-500"></i> <span id="visual-mode-label">Dynamic LLM Visual</span>
+              </div>
+            </div>
+
+            <div class="flex-1 my-3 relative rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center" id="visual-container">
+              <img id="visual-extracted-img" class="hidden w-full h-full object-contain p-2 rounded-lg" alt="Extracted Document Diagram" />
+              <div id="visual-svg-container" class="hidden w-full h-full p-4 flex flex-col items-center justify-center overflow-auto"></div>
+              <canvas id="visual-canvas" width="600" height="360" class="w-full h-full object-contain"></canvas>
+            </div>
+
+            <div id="interactive-controls-bar" class="pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-700">
+              <div class="flex items-center gap-3">
+                <label class="font-medium text-slate-600">Voltage (V):</label>
+                <input type="range" id="slider-voltage" min="1" max="24" value="12" class="accent-sky-600 w-24" oninput="updateCircuitSimulation()">
+                <span id="val-voltage" class="font-mono text-sky-700 font-bold">12V</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <label class="font-medium text-slate-600">Resistance (R):</label>
+                <input type="range" id="slider-resistance" min="1" max="10" value="4" class="accent-sky-600 w-24" oninput="updateCircuitSimulation()">
+                <span id="val-resistance" class="font-mono text-sky-700 font-bold">4Ω</span>
+              </div>
+              <div class="font-mono text-slate-900 font-bold bg-sky-50 px-2.5 py-1 rounded border border-sky-200">
+                I = <span id="val-current">3.00</span> A
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instructor Panel (5 Cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="glass-card interactive-card p-5 flex flex-col h-[520px] justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+                <div class="flex items-center gap-3">
+                  <div id="avatar-circle" class="w-10 h-10 rounded-full bg-sky-100 border border-sky-300 flex items-center justify-center text-sky-800 font-bold text-xs">
+                    AI
+                  </div>
+                  <div>
+                    <h3 class="text-xs font-bold text-slate-900">
+                      Lesson Instructor
+                    </h3>
+                    <div class="flex items-center gap-1 text-[11px] text-slate-500">
+                      <span id="speech-state-text">Ready for narration</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="toggleSpeech()" id="btn-play-speech" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium shadow-sm transition-colors flex items-center gap-1.5" title="Listen to Explanation">
+                    <i data-lucide="volume-2" class="w-3.5 h-3.5" id="speech-icon"></i> Listen
+                  </button>
+                  <button onclick="stopSpeech()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors" title="Stop Audio">
+                    Stop
+                  </button>
+                </div>
+              </div>
+
+              <!-- Audio Player Bar Controls -->
+              <div id="narration-audio-player" class="mt-3 p-3 bg-slate-900 text-white rounded-xl border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <button onclick="skipSpeech(-10)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-md text-xs transition-colors" title="Rewind 10s">
+                      <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> -10s
+                    </button>
+                    <button onclick="toggleSpeech()" id="audio-bar-play-btn" class="p-2 bg-sky-500 hover:bg-sky-400 text-white rounded-lg text-xs font-bold transition-colors">
+                      <i data-lucide="play" class="w-4 h-4" id="audio-bar-play-icon"></i>
+                    </button>
+                    <button onclick="skipSpeech(10)" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-md text-xs transition-colors" title="Forward 10s">
+                      +10s <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs font-mono text-slate-300">
+                    <span id="audio-time-current">00:00</span> / <span id="audio-time-total">00:30</span>
+                    <select id="audio-speed-select" onchange="changeSpeechSpeed(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] focus:outline-none">
+                      <option value="1.0" selected>1.0x</option>
+                      <option value="1.25">1.25x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2.0">2.0x</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden cursor-pointer" onclick="seekAudioProgress(event)">
+                  <div id="audio-progress-fill" class="bg-sky-400 h-full w-0 transition-all duration-200"></div>
+                </div>
+              </div>
+
+              <div class="mt-3 p-3 bg-sky-50/70 rounded-lg border border-sky-200/80">
+                <div class="text-[11px] font-semibold text-sky-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <i data-lucide="mic" class="w-3 h-3 text-sky-600"></i> Narration Script
+                </div>
+                <p id="section-narration-text" class="text-xs text-slate-700 leading-relaxed font-sans italic">
+                  "Electric current is defined as the net rate of flow of electric charge..."
+                </p>
+              </div>
+
+              <!-- Explanation Mode Switcher (Concise vs Detailed) -->
+              <div class="mt-3 space-y-2">
+                <div class="flex items-center justify-between pb-1 border-b border-slate-200">
+                  <span class="text-[11px] font-bold text-slate-600 uppercase">Explanation Depth</span>
+                  <div class="flex p-0.5 bg-slate-200 rounded-md">
+                    <button onclick="setExplanationMode('concise')" id="btn-exp-concise" class="px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all bg-white text-slate-900 shadow-xs">Concise</button>
+                    <button onclick="setExplanationMode('detailed')" id="btn-exp-detailed" class="px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all text-slate-600 hover:text-slate-900">Detailed</button>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-white rounded-lg border border-slate-200 overflow-y-auto max-h-[130px]">
+                  <p id="section-explanation-text" class="text-xs text-slate-800 leading-relaxed"></p>
+                </div>
+                
+                <div class="p-3 bg-sky-50/80 rounded-lg border border-sky-200/90">
+                  <span class="text-[11px] font-bold text-sky-900 flex items-center gap-1">
+                    <i data-lucide="lightbulb" class="w-3 h-3 text-sky-600"></i> Practical Example
+                  </span>
+                  <p id="section-example-text" class="text-xs text-sky-950 mt-1 leading-relaxed"></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200">
+              <button onclick="openCheckpointModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-xs shadow-sm flex items-center justify-center gap-2 transition-colors">
+                <i data-lucide="help-circle" class="w-4 h-4"></i> Verify Concept Mastery (Checkpoint)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECKPOINT MODAL -->
+    <div id="modal-checkpoint" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+      <div class="bg-white max-w-xl w-full p-6 sm:p-7 rounded-xl border border-slate-200 shadow-xl space-y-5 animate-fade-in relative">
+        <button onclick="closeCheckpointModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-200">
+            Interactive Checkpoint
+          </span>
+          <span id="checkpoint-topic-name" class="text-xs text-slate-500">Concept Check</span>
+        </div>
+
+        <h3 id="checkpoint-question-text" class="text-sm font-bold text-slate-900 leading-snug">
+          What is the SI unit of Electric Current?
+        </h3>
+
+        <div id="checkpoint-options-container" class="space-y-2"></div>
+        <div id="checkpoint-feedback" class="hidden rounded-lg p-4 transition-all"></div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-200">
+          <button onclick="closeCheckpointModal()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-medium">
+            Close
+          </button>
+          <button onclick="submitCheckpointAnswer()" id="btn-submit-answer" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-semibold shadow-sm flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i> Submit Response
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: FINAL QUIZ -->
+    <section id="view-quiz" class="view-panel hidden space-y-6 animate-fade-in">
+      <div class="glass-card interactive-card p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">
+              Module Evaluation Quiz
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">Complete AI-generated evaluation questions contextually extracted from your document.</p>
+          </div>
+          
+          <!-- Difficulty Level Selector -->
+          <div class="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl border border-slate-200">
+            <button onclick="filterQuizDifficulty('all')" id="btn-diff-all" class="px-3 py-1 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-xs">All</button>
+            <button onclick="filterQuizDifficulty('easy')" id="btn-diff-easy" class="px-3 py-1 rounded-lg text-xs font-semibold text-emerald-700 hover:bg-emerald-50">Easy</button>
+            <button onclick="filterQuizDifficulty('medium')" id="btn-diff-medium" class="px-3 py-1 rounded-lg text-xs font-semibold text-amber-700 hover:bg-amber-50">Medium</button>
+            <button onclick="filterQuizDifficulty('hard')" id="btn-diff-hard" class="px-3 py-1 rounded-lg text-xs font-semibold text-rose-700 hover:bg-rose-50">Hard</button>
+          </div>
+        </div>
+
+        <div id="final-quiz-container" class="space-y-6"></div>
+
+        <div class="pt-4 border-t border-slate-200 flex justify-end">
+          <button onclick="submitFinalQuiz()" id="btn-submit-quiz" class="btn-primary px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md flex items-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i> Submit Quiz & View Performance Report
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: PERFORMANCE REPORT -->
+    <section id="view-report" class="view-panel hidden space-y-6 animate-fade-in">
+      <div class="glass-card interactive-card p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">
+              Learning Performance Report
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">Detailed evaluation and adaptive concept diagnostic</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-slate-300">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print / Export
+            </button>
+            <button onclick="switchView('player')" class="btn-primary px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Review Module
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+          <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+            <div class="relative w-24 h-24 flex items-center justify-center">
+              <div class="w-full h-full rounded-full border-4 border-sky-100 border-t-sky-600"></div>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="report-score-num" class="text-2xl font-bold text-slate-900">0%</span>
+                <span class="text-[10px] font-semibold text-slate-500 uppercase">Score</span>
+              </div>
+            </div>
+            <span id="report-tier-badge" class="mt-3 px-3 py-0.5 bg-sky-100 text-sky-800 border border-sky-300 rounded-full text-xs font-semibold">
+              Pending Assessment
+            </span>
+          </div>
+
+          <div class="bg-sky-50/80 p-5 rounded-xl border border-sky-200/80 space-y-2">
+            <div class="text-emerald-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-4 h-4"></i> Strong Concepts
+            </div>
+            <div id="report-strong-list" class="flex flex-wrap gap-1.5 pt-1">
+              <span class="text-xs text-slate-500 italic">No quiz submitted yet for this session.</span>
+            </div>
+          </div>
+
+          <div class="bg-sky-50/80 p-5 rounded-xl border border-sky-200/80 space-y-2">
+            <div class="text-amber-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="alert-circle" class="w-4 h-4"></i> Areas Needing Review
+            </div>
+            <div id="report-weak-list" class="flex flex-wrap gap-1.5 pt-1">
+              <span class="text-xs text-slate-500 italic">No quiz submitted yet for this session.</span>
+            </div>
+          </div>
+
+          <div class="bg-sky-50/80 p-5 rounded-xl border border-sky-200/80 space-y-2 text-xs">
+            <span class="text-sky-900/80 font-bold uppercase text-[10px]">Session Metrics</span>
+            <div class="flex justify-between py-1 border-b border-sky-200/80">
+              <span class="text-slate-600">Total Questions:</span>
+              <span id="report-stat-total" class="font-bold text-slate-900">0</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-sky-200/80">
+              <span class="text-slate-600">Correct Answers:</span>
+              <span id="report-stat-correct" class="font-bold text-emerald-700">0</span>
+            </div>
+            <div class="flex justify-between py-1">
+              <span class="text-slate-600">Mastery Status:</span>
+              <span class="font-bold text-slate-600">Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-xl bg-sky-50/80 border border-sky-200/90 space-y-1.5">
+          <div class="text-sky-900 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-4 h-4 text-sky-600"></i> Pedagogical Recommendation
+          </div>
+          <p id="report-recommendation-text" class="text-xs text-sky-950 leading-relaxed font-medium">
+            Complete the Module Evaluation Quiz in the Assessment tab to evaluate your knowledge and generate custom pedagogical recommendations.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: LEARNER PROFILE -->
+    <section id="view-profile" class="view-panel hidden space-y-6 animate-fade-in">
+      <div class="glass-card interactive-card p-6 sm:p-8 space-y-6">
+        <div class="flex items-center justify-between pb-6 border-b border-slate-200">
+          <div class="flex items-center gap-4">
+            <div id="profile-avatar-circle" class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 text-white font-bold text-base flex items-center justify-center shadow-md shadow-sky-200">
+              ST
+            </div>
+            <div>
+              <h2 id="profile-display-name" class="text-xl font-bold text-slate-900">Student Learner</h2>
+              <p id="profile-display-email" class="text-xs text-slate-500">student@aiplatform.org</p>
+            </div>
+          </div>
+          <span id="profile-display-id" class="px-3 py-1 bg-sky-100 text-sky-800 border border-sky-300 rounded-lg text-xs font-mono">
+            ID: student_001
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-sky-50/80 p-5 rounded-xl border border-sky-200/80 space-y-1">
+            <span class="text-xs text-sky-900/80 font-semibold uppercase">Learning Streak</span>
+            <div id="profile-streak-count" class="text-2xl font-bold text-slate-900">1 Day</div>
+            <p class="text-[11px] text-slate-500">Consistent study frequency</p>
+          </div>
+          <div class="bg-sky-50/80 p-5 rounded-xl border border-sky-200/80 space-y-1">
+            <span class="text-xs text-sky-900/80 font-semibold uppercase">Completed Modules</span>
+            <div id="profile-completed-count" class="text-2xl font-bold text-sky-700">0 Modules</div>
+            <p id="profile-topic-summary" class="text-[11px] text-slate-500">Active Curriculum Progress</p>
+          </div>
+          <div class="bg-sky-50/80 p-5 rounded-xl border border-sky-200/80 space-y-1">
+            <span class="text-xs text-sky-900/80 font-semibold uppercase">Target Proficiency</span>
+            <div id="profile-level-display" class="text-2xl font-bold text-slate-900">Beginner</div>
+            <p class="text-[11px] text-slate-500">Auto-calibrating assessment</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-sky-50/80 p-5 rounded-xl border border-sky-200/80 space-y-3">
+            <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Mastered Concept Ledger
+            </h3>
+            <div id="profile-mastered-ledger" class="flex flex-wrap gap-2 pt-1">
+              <span class="text-xs text-slate-500 italic">Complete assessments to record mastered concepts.</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+            <h3 class="text-xs font-bold text-rose-800 uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600"></i> Areas Needing Review
+            </h3>
+            <div id="profile-review-ledger" class="flex flex-wrap gap-2 pt-1">
+              <span class="text-xs text-slate-500 italic">No concept gaps identified.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: BONUS STUDY TOOLS -->
+    <section id="view-bonus" class="view-panel hidden space-y-6 animate-fade-in">
+      <div class="glass-card interactive-card p-6 sm:p-8 space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">
+              Interactive Study Tools
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">Active recall flashcards, concept taxonomy map, and exported study notes</p>
+          </div>
+        </div>
+
+        <div class="flex space-x-2 border-b border-slate-200 pb-3">
+          <button onclick="switchBonusTab('flashcards')" id="tab-btn-flashcards" class="px-4 py-2 rounded-lg text-xs font-semibold bg-sky-600 text-white shadow-sm">
+            Flashcards Deck
+          </button>
+          <button onclick="switchBonusTab('mindmap')" id="tab-btn-mindmap" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900">
+            Concept Taxonomy Map
+          </button>
+          <button onclick="switchBonusTab('notes')" id="tab-btn-notes" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900">
+            Study Notes
+          </button>
+        </div>
+
+        <!-- TAB 1: FLASHCARDS -->
+        <div id="bonus-tab-flashcards" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500 font-medium">Click card to flip • Active Recall Deck</span>
+            <div class="flex items-center gap-2">
+              <button onclick="prevFlashcard()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium border border-slate-200">Previous</button>
+              <span id="flashcard-counter" class="text-xs font-mono text-sky-800 font-semibold px-2 py-0.5 bg-sky-100 rounded border border-sky-200">1 / 3</span>
+              <button onclick="nextFlashcard()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium border border-slate-200">Next</button>
+            </div>
+          </div>
+
+          <div class="perspective-1000 w-full max-w-lg mx-auto h-60 cursor-pointer" onclick="flipCurrentFlashcard()">
+            <div id="flashcard-inner" class="flip-card-inner relative w-full h-full text-center">
+              <div class="flip-card-front absolute inset-0 bg-white/90 p-6 rounded-2xl border border-sky-200 shadow-md flex flex-col items-center justify-center space-y-3 backdrop-blur-md">
+                <span class="px-2.5 py-0.5 bg-sky-100 text-sky-800 rounded-full text-[10px] font-bold uppercase tracking-wider border border-sky-300">Question / Term</span>
+                <h4 id="fc-front-text" class="text-base font-bold text-slate-900">What is Electric Current and Voltage?</h4>
+                <p class="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                  <i data-lucide="rotate-cw" class="w-3 h-3 text-sky-500"></i> Click to reveal explanation
+                </p>
+              </div>
+              <div class="flip-card-back absolute inset-0 bg-slate-900/95 p-6 rounded-2xl border border-slate-800 text-white flex flex-col items-center justify-center space-y-3 backdrop-blur-md">
+                <span class="px-2.5 py-0.5 bg-slate-800 text-sky-300 rounded-full text-[10px] font-bold uppercase tracking-wider border border-slate-700">Explanation</span>
+                <p id="fc-back-text" class="text-xs text-slate-200 leading-relaxed font-sans"></p>
+                <p id="fc-example-text" class="text-xs text-amber-300 italic"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: MIND MAP -->
+        <div id="bonus-tab-mindmap" class="hidden space-y-4">
+          <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800 h-96 relative flex items-center justify-center overflow-hidden shadow-inner">
+            <canvas id="mindmap-canvas" width="700" height="360" class="w-full h-full object-contain"></canvas>
+          </div>
+        </div>
+
+        <!-- TAB 3: STUDY NOTES -->
+        <div id="bonus-tab-notes" class="hidden space-y-4">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-slate-500 font-medium">Exportable Markdown Summary</span>
+            <button onclick="copyStudyNotes()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Notes
+            </button>
+          </div>
+          <div id="notes-content-box" class="p-5 bg-sky-50/70 rounded-xl border border-sky-200/80 font-mono text-xs text-slate-800 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto"></div>
+        </div>
+
+      </div>
+    </section>
+
+  <!-- LOGIN & REGISTRATION MODAL -->
+  <div id="modal-auth" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full p-6 sm:p-7 space-y-5 animate-fade-in relative shadow-2xl">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 pb-3 border-b border-slate-200">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-sky-200">
+          <i data-lucide="user-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Student Account Portal</h3>
+          <p class="text-xs text-slate-500">Sign in or create your learner profile</p>
+        </div>
+      </div>
+
+      <!-- Auth Mode Tabs (Login vs Register) -->
+      <div class="flex p-1 bg-sky-100/90 rounded-xl border border-sky-200/80">
+        <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-white text-sky-950 shadow-xs transition-all">Sign In</button>
+        <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all">Create Account</button>
+      </div>
+
+      <!-- FORM: LOGIN -->
+      <form id="form-auth-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Email or Username</label>
+          <input type="text" id="login-username" required placeholder="student@aiplatform.org" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600">
+        </div>
+        <button type="submit" class="btn-primary w-full py-2.5 rounded-xl font-semibold text-xs shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i> Sign In to Studio
+        </button>
+      </form>
+
+      <!-- FORM: REGISTER -->
+      <form id="form-auth-register" onsubmit="handleRegisterSubmit(event)" class="space-y-3.5 hidden">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
+          <input type="text" id="reg-name" required placeholder="e.g. Siddhant Sharma" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Email</label>
+            <input type="email" id="reg-email" required placeholder="siddhant@email.com" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Username</label>
+            <input type="text" id="reg-username" required placeholder="siddhant_s" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Password</label>
+          <input type="password" id="reg-password" required placeholder="Create password" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Target Level</label>
+            <select id="reg-level" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-600">
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Language</label>
+            <select id="reg-lang" class="w-full bg-white/90 border border-sky-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-600">
+              <option value="en">English</option>
+              <option value="hi">Hindi (हिंदी)</option>
+              <option value="hinglish">Hinglish</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full py-2.5 rounded-xl font-semibold text-xs shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Create Account & Launch
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="border-t border-sky-200/80 bg-sky-50/90 backdrop-blur-md py-4 px-6 text-center text-xs text-sky-900/70 font-medium">
+    AI Learning Platform — Intelligent Adaptive Education
+  </footer>
+
+  <script src="/static/app.js?v=11.0"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "title": "Chapter 4: Electricity & Magnetism",
+  "level": "beginner",
+  "time_minutes": 20,
+  "language": "hi",
+  "topic_or_chapter": "Electric Current and Ohm's Law",
+  "sections": [
+    {
+      "id": "s1",
+      "concept": "Electric Current and Voltage",
+      "explanation": "Electric current is the rate of flow of electric charge in a circuit. Voltage is the electrical pressure that drives current.",
+      "example": "Think of voltage as water pressure in a tank, and current as the flow of water through the hose.",
+      "visual_type": "diagram",
+      "narration_script": "Namaste! Aaj hum electricity aur voltage ke simple concept ko samjhenge. Current ka matlab hai charges ka flow, aur voltage hai woh pressure jo charges ko aage push karta hai.",
+      "checkpoint_question": {
+        "type": "mcq",
+        "question": "What is the SI unit of Electric Current?",
+        "options": ["Volt", "Ampere", "Ohm", "Watt"],
+        "correct": "Ampere"
+      }
+    },
+    {
+      "id": "s2",
+      "concept": "Ohm's Law",
+      "explanation": "Ohm's Law states that current through a conductor between two points is directly proportional to voltage across two points: V = I * R.",
+      "example": "If you double the voltage in a circuit with fixed resistance, the current doubles.",
+      "visual_type": "graph",
+      "narration_script": "Ohm's law ek simple relationship batata hai voltage, current aur resistance ke beech. Formula hai V equals I times R.",
+      "checkpoint_question": {
+        "type": "mcq",
+        "question": "According to Ohm's Law, what happens to current if resistance increases while voltage stays constant?",
+        "options": ["Current increases", "Current decreases", "Current stays same", "Current becomes zero"],
+        "correct": "Current decreases"
+      }
+    }
+  ],
+  "final_quiz": [
+    {
+      "id": "q1",
+      "question": "Which formula correctly represents Ohm's Law?",
+      "options": ["V = I * R", "V = I / R", "R = V * I", "I = V * R"],
+      "correct": "V = I * R"
+    },
+    {
+      "id": "q2",
+      "question": "If Voltage is 12V and Resistance is 4 Ohms, what is the Current?",
+      "options": ["48 Amperes", "3 Amperes", "8 Amperes", "0.33 Amperes"],
+      "correct": "3 Amperes"
+    }
+  ]
+}
