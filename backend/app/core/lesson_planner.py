@@ -5,6 +5,7 @@ Turns retrieved material + learner profile + time rules into structured LessonPl
 
 import json
 import os
+import re
 from typing import Dict, Any, Optional
 from backend.app.db.models import LessonPlan, Section, CheckpointQuestion, QuizQuestion
 from backend.app.core.time_rules import get_time_rules
@@ -494,6 +495,209 @@ def generate_mock_lesson_plan(
 
     sections = []
     num_to_use = min(max_sections, len(section_templates))
+
+    # Dynamic Document Context Extractor when document/text is uploaded
+    if retrieved_context and len(retrieved_context.strip()) > 20:
+        # Filter out purely structural slide tags, file metadata, or empty lines
+        raw_lines = [l.strip() for l in retrieved_context.split('\n') if l.strip()]
+        lines = []
+        for l in raw_lines:
+            if l.startswith("---") or len(l) <= 4:
+                continue
+            # Filter noise, wrapper strings, email addresses, and license disclaimers
+            if re.search(r'^(pdf document:|document ingested:|slide \d+|page \d+|authorized licensed|ieee|doi:|http|@|copyright)', l, re.IGNORECASE):
+                continue
+            lines.append(l)
+
+        # If lines are few, split sentences/clauses to extract rich, granular concepts
+        meaningful_lines = []
+        for l in lines:
+            parts = [p.strip() for p in re.split(r'(?<=[.!?])\s+|\s*;\s*', l) if len(p.strip()) > 8]
+            if len(parts) > 1 and len(lines) < num_to_use * 2:
+                meaningful_lines.extend(parts)
+            else:
+                meaningful_lines.append(l)
+
+        if not meaningful_lines:
+            meaningful_lines = [l for l in lines if len(l) > 3 and not l.startswith("---")]
+
+        if len(meaningful_lines) >= 1:
+            # Check for explicit section headings in the text
+            heading_patterns = [
+                r'^[I|V|X]+\.\s+([A-Za-z\s]{3,60})',
+                r'^\d+\.\s+([A-Za-z\s]{3,60})',
+                r'^#{1,3}\s+([A-Za-z0-9\s]{3,60})',
+                r'^([A-Z][A-Za-z\s]{3,45}):\s*$'
+            ]
+            extracted_headers = []
+            for l in meaningful_lines:
+                for pat in heading_patterns:
+                    m = re.match(pat, l)
+                    if m:
+                        raw_h = m.group(1).strip()
+                        # Fix broken font drop-cap spacing like "I NTRODUCTION" -> "Introduction"
+                        clean_h = re.sub(r'\b([A-Z])\s+([A-Z]+)', r'\1\2', raw_h).title()
+                        if clean_h not in extracted_headers and len(clean_h) >= 4 and not re.search(r'authorized|license|copyright', clean_h, re.IGNORECASE):
+                            extracted_headers.append(clean_h)
+
+            doc_sections = []
+            chunk_size = max(1, len(meaningful_lines) // num_to_use)
+            used_concept_titles = set()
+
+            for i in range(num_to_use):
+                start_i = i * chunk_size
+                end_i = start_i + chunk_size if i < num_to_use - 1 else len(meaningful_lines)
+                chunk_lines = meaningful_lines[start_i:end_i]
+                if not chunk_lines:
+                    chunk_lines = meaningful_lines[i % len(meaningful_lines) : (i % len(meaningful_lines)) + 1]
+
+                # Determine Concept Title
+                if i < len(extracted_headers):
+                    concept_title = extracted_headers[i]
+                else:
+                    raw_header = chunk_lines[0]
+                    # Clean out leading numbered bullets like "1.", "•", "Chapter 4:"
+                    header_clean = re.sub(r'^[#*\-•\s\d\.:]+', '', raw_header).strip()
+                    header_clean = re.sub(r'^(chapter|section|module|unit|part)\s+\d+[:\s\-]*', '', header_clean, flags=re.IGNORECASE).strip()
+                    # Clean out noise
+                    header_clean = re.sub(r'\b(pdf|docx|ppt|notes|report|document|file)\b', '', header_clean, flags=re.IGNORECASE).strip()
+                    # Take first clause before colon or period
+                    clause = re.split(r'[:\.\n]', header_clean)[0].strip()
+                    if len(clause) >= 4:
+                        header_clean = clause
+                    if len(header_clean) > 38:
+                        header_clean = " ".join(header_clean.split()[:4])
+                    concept_title = header_clean.title() if header_clean else f"Module {i+1}: {topic}"
+
+                # Clean trailing punctuation
+                concept_title = re.sub(r'[:;,\.\s\-]+$', '', concept_title).strip()
+
+                # Deduplicate concept title if needed
+                if concept_title in used_concept_titles or len(concept_title) < 3:
+                    chunk_words = [w for w in re.findall(r'\b[A-Za-z]{4,}\b', " ".join(chunk_lines)) if w.lower() not in ["this", "that", "with", "from", "have", "were", "been", "their", "which", "chapter", "section", "module", "study", "notes"]]
+                    if len(chunk_words) >= 2:
+                        concept_title = f"{chunk_words[0].title()} & {chunk_words[1].title()}"
+                    else:
+                        concept_title = f"{topic} Phase {i+1}"
+                used_concept_titles.add(concept_title)
+
+                # Build rich multi-paragraph detailed explanation
+                body_paragraphs = "\n\n".join([f"• {line}" for line in chunk_lines])
+                detailed_body = (
+                    f"📖 DOCUMENT CONTENT ANALYSIS & EXTRACTED MODULE:\n"
+                    f"{' '.join(chunk_lines)}\n\n"
+                    f"📌 CORE CONCEPTS & CLAUSES:\n"
+                    f"{body_paragraphs}\n\n"
+                    f"💡 PEDAGOGICAL INSIGHT:\n"
+                    f"This module examines '{concept_title}' extracted from the source document. "
+                    f"Understanding these components ensures mastery of {topic} at a {level} level."
+                )
+
+                concise_points = "• " + "\n• ".join(chunk_lines[:4])
+                example_text = f"Key Finding from Source Document: {chunk_lines[-1]}"
+
+                # Visual classifier heuristic
+                chunk_text_lower = " ".join(chunk_lines).lower()
+                v_type = "graph" if any(w in chunk_text_lower for w in ["graph", "plot", "chart", "rate", "percent", "%", "metric"]) else (
+                    "equation" if any(w in chunk_text_lower for w in ["formula", "equation", "=", "+", "sum", "math"]) else "diagram"
+                )
+
+                # Context-aware dynamic nodes extracted from the specific chunk content
+                chunk_str = " ".join(chunk_lines)
+                phrases = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b', chunk_str)
+                clean_terms = [w.title() for w in re.findall(r'\b[A-Za-z]{4,16}\b', chunk_str) if w.lower() not in ["this", "that", "with", "from", "have", "were", "been", "their", "which", "when", "into", "also", "such", "chapter", "section", "document", "module", "study", "notes", "based"]]
+
+                subnode_names = []
+                for p in phrases:
+                    if p not in subnode_names and p.lower() != concept_title.lower() and len(subnode_names) < 3:
+                        subnode_names.append(p[:22])
+
+                for t in clean_terms:
+                    if len(subnode_names) >= 3:
+                        break
+                    if t not in subnode_names and not any(t.lower() in sn.lower() for sn in subnode_names):
+                        subnode_names.append(t[:22])
+
+                while len(subnode_names) < 3:
+                    idx_sn = len(subnode_names)
+                    roles = [f"{concept_title[:14]} Specs", f"{concept_title[:14]} Workflow", f"{concept_title[:14]} Outcomes"]
+                    subnode_names.append(roles[idx_sn])
+
+                node1_label = subnode_names[0]
+                node2_label = subnode_names[1]
+                node3_label = subnode_names[2]
+
+                nodes = [
+                    {"id": "n1", "label": node1_label[:22], "category": "input", "description": f"Input specification for {concept_title}"},
+                    {"id": "n2", "label": node2_label[:22], "category": "process", "description": f"Mechanism or transformation in {concept_title}"},
+                    {"id": "n3", "label": node3_label[:22], "category": "output", "description": f"Deliverable or outcome of {concept_title}"}
+                ]
+
+                question_text = f"Based on the uploaded document for '{concept_title}', which of the following is correct?"
+                correct_opt = f"{chunk_lines[0][:75]}"
+                wrong_opt1 = "The document explicitly refutes this baseline guideline."
+                wrong_opt2 = "This policy applies only to obsolete legacy systems."
+                wrong_opt3 = "None of the document specifications support this requirement."
+
+                doc_sections.append(
+                    Section(
+                        id=f"s{i+1}",
+                        concept=concept_title,
+                        explanation=detailed_body,
+                        concise_explanation=concise_points,
+                        detailed_explanation=detailed_body,
+                        example=example_text,
+                        visual_type=v_type,
+                        visual_details={
+                            "diagram_type": v_type,
+                            "title": f"Document Node: {concept_title[:28]}",
+                            "nodes": nodes,
+                            "edges": [
+                                {"from": "n1", "to": "n2", "label": "feeds into"},
+                                {"from": "n2", "to": "n3", "label": "yields"}
+                            ],
+                            "key_formula": f"{concept_title[:22]} Specification"
+                        },
+                        narration_script=f"Section {i+1} covers {concept_title}. The document specifies: {chunk_lines[0][:100]}.",
+                        checkpoint_question=CheckpointQuestion(
+                            type="mcq",
+                            question=question_text,
+                            options=[correct_opt, wrong_opt1, wrong_opt2, wrong_opt3],
+                            correct=correct_opt
+                        )
+                    )
+                )
+
+            # Build contextual quiz from extracted text lines
+            context_quiz = []
+            for i, line in enumerate(meaningful_lines[:6]):
+                diff = ["easy", "easy", "medium", "medium", "hard", "hard"][i % 6]
+                q_text = f"[{diff.capitalize()}] Document Assessment Q{i+1}: What does the uploaded document specify regarding '{line[:35]}...'?"
+                c_ans = f"Correct Specification: {line[:70]}"
+                o1 = "An unsupported assertion not mentioned in the source document"
+                o2 = "A legacy regulation that was permanently revoked"
+                o3 = "None of the above choices are valid"
+                context_quiz.append(
+                    QuizQuestion(
+                        id=f"q{i+1}",
+                        question=q_text,
+                        options=[c_ans, o1, o2, o3],
+                        correct=c_ans,
+                        difficulty=diff,
+                        concept_category=f"Document Part {i+1}"
+                    )
+                )
+
+            return LessonPlan(
+                title=f"Lesson: {topic}",
+                level=level,
+                time_minutes=time_minutes,
+                language=language,
+                topic_or_chapter=topic,
+                sections=doc_sections,
+                final_quiz=context_quiz
+            )
+
     for i in range(num_to_use):
         tmpl = section_templates[i]
         sections.append(

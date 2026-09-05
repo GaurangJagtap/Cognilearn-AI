@@ -147,6 +147,47 @@ def login_user(payload: UserLoginRequest):
 def get_current_user():
     return SESSION_STATE.get("learner_profile") or {}
 
+def _extract_section_subnodes(sec: Any, s_idx: int = 1) -> list:
+    subnodes = []
+    def _val(obj, key, default=None):
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+
+    v_details = _val(sec, "visual_details", {}) or {}
+    if not isinstance(v_details, dict) and hasattr(v_details, "dict"):
+        v_details = v_details.dict()
+
+    v_nodes = v_details.get("nodes", []) if isinstance(v_details, dict) else []
+    for n in v_nodes:
+        lbl = (n.get("label", "") if isinstance(n, dict) else getattr(n, "label", "")).strip()
+        if lbl and not re.search(r'^(n\d|input|process|output)$', lbl, re.IGNORECASE):
+            subnodes.append(lbl)
+
+    # 2. Check bullet points in concise_explanation or explanation
+    if len(subnodes) < 2:
+        concise = _val(sec, "concise_explanation") or _val(sec, "explanation") or _val(sec, "concise") or ""
+        bullets = re.findall(r'[•\-\*]\s*([A-Za-z0-9\s,\-_/]{3,35})(?::|\.|\n|$)', concise)
+        for b in bullets:
+            b_clean = b.strip()
+            if b_clean and b_clean not in subnodes:
+                subnodes.append(b_clean)
+                if len(subnodes) >= 3:
+                    break
+
+    # 3. Dynamic synthesis from concept words
+    if len(subnodes) < 2:
+        concept_name = _val(sec, "concept") or _val(sec, "concept_title") or f"Pillar {s_idx}"
+        words = [w for w in re.findall(r'\b[A-Za-z]{3,}\b', str(concept_name)) if w.lower() not in ["and", "the", "for", "with", "from", "into", "part", "section", "chapter", "module"]]
+        if words:
+            subnodes.append(f"{words[0].title()} Specs")
+            subnodes.append(f"{words[1].title()} Workflow" if len(words) > 1 else "Execution Process")
+            subnodes.append(f"{words[-1].title()} Metrics")
+        else:
+            subnodes = [f"Module {s_idx} Basis", f"Mechanism {s_idx}", f"Target Yield {s_idx}"]
+
+    return [{"name": s[:32]} for s in subnodes[:3]]
+
 # --- DYNAMIC STUDY TOOLS ROUTE ---
 @router.get("/study-tools")
 def get_study_tools():
@@ -157,7 +198,7 @@ def get_study_tools():
     # Dynamic Flashcards generated from sections
     flashcards = []
     for idx, sec in enumerate(sections, 1):
-        concept = sec.get("concept") or f"Concept {idx}"
+        concept = sec.get("concept") or sec.get("concept_title") or f"Concept {idx}"
         explanation = sec.get("explanation") or sec.get("detailed_explanation") or "Key concept principle"
         example = sec.get("example") or "Practical real-world application"
         flashcards.append({
@@ -177,25 +218,33 @@ def get_study_tools():
             }
         ]
 
-    # Dynamic Concept Taxonomy Map Tree
+    # Dynamic Concept Taxonomy Map Tree (Adapts to current document sections)
     taxonomy_tree = {
         "name": topic,
         "children": [
             {
                 "name": sec.get("concept", f"Pillar {idx}"),
-                "children": [
-                    {"name": "Foundational Guidelines"},
-                    {"name": "Operational Execution"},
-                    {"name": "Target Impact & Outcomes"}
-                ]
+                "children": _extract_section_subnodes(sec, idx)
             } for idx, sec in enumerate(sections, 1)
         ] if sections else [
             {
                 "name": f"{topic} Core Strategy",
-                "children": [{"name": "Policy & Scope"}, {"name": "Implementation"}, {"name": "Evaluation Metrics"}]
+                "children": [{"name": f"{topic} Foundations"}, {"name": f"{topic} Methodology"}, {"name": f"{topic} Outcomes"}]
             }
         ]
     }
+
+    # Dynamic Process Pipeline Flowchart for the document
+    pipeline_flow = [
+        {
+            "step": idx,
+            "title": sec.get("concept", f"Stage {idx}"),
+            "visual_type": sec.get("visual_type", "diagram"),
+            "key_formula": sec.get("visual_details", {}).get("key_formula", ""),
+            "sub_steps": [c["name"] for c in _extract_section_subnodes(sec, idx)],
+            "summary": (sec.get("concise_explanation") or sec.get("explanation", "")).split("\n")[0].replace("•", "").strip() or sec.get("concept", "")
+        } for idx, sec in enumerate(sections, 1)
+    ]
 
     # Dynamic Study Notes Summary
     notes_lines = [
@@ -213,6 +262,7 @@ def get_study_tools():
         "topic": topic,
         "flashcards": flashcards,
         "taxonomy_tree": taxonomy_tree,
+        "pipeline_flow": pipeline_flow,
         "study_notes": "\n".join(notes_lines)
     }
 
@@ -324,8 +374,11 @@ async def upload_document(
 def generate_lesson_plan_endpoint(payload: GenerateLessonRequest):
     retrieved_context = ""
     if payload.text:
-        ingest_document(payload.text)
-        retrieved_context = retrieve_relevant_chunks(payload.topic or "Electricity")
+        ingest_document(payload.text, reset=True)
+        if len(payload.text) <= 80000:
+            retrieved_context = payload.text
+        else:
+            retrieved_context = retrieve_relevant_chunks(payload.topic or "Overview", top_k=8)
 
     profile = {
         "preferred_level": payload.level or "beginner",
@@ -355,19 +408,23 @@ def generate_lesson_plan_endpoint(payload: GenerateLessonRequest):
 
         # Ensure visual_details exists
         if not sec.get("visual_details"):
+            c_words = [w for w in re.findall(r'\b[A-Za-z]{3,}\b', concept) if w.lower() not in ["and", "the", "for", "with", "from", "into", "part", "section"]]
+            n1_lbl = f"{c_words[0].title()} Data" if c_words else f"{concept[:14]} In"
+            n2_lbl = f"{c_words[1].title()} Engine" if len(c_words) > 1 else "Execution Process"
+            n3_lbl = f"{c_words[-1].title()} Result" if c_words else "Target Yield"
             sec["visual_details"] = {
                 "diagram_type": visual_type,
                 "title": concept,
                 "nodes": [
-                    {"id": "n1", "label": f"{concept} Input", "category": "input", "description": f"Initial state or input of {concept}"},
-                    {"id": "n2", "label": f"Core Process", "category": "process", "description": f"Main mechanism of {concept}"},
-                    {"id": "n3", "label": f"Output / Result", "category": "output", "description": f"Key outcome of {concept}"}
+                    {"id": "n1", "label": n1_lbl[:20], "category": "input", "description": f"Input specification for {concept}"},
+                    {"id": "n2", "label": n2_lbl[:20], "category": "process", "description": f"Mechanism for {concept}"},
+                    {"id": "n3", "label": n3_lbl[:20], "category": "output", "description": f"Outcome of {concept}"}
                 ],
                 "edges": [
                     {"from": "n1", "to": "n2", "label": "leads to"},
                     {"from": "n2", "to": "n3", "label": "results in"}
                 ],
-                "key_formula": f"{concept} Principle"
+                "key_formula": f"{concept[:24]} Principle"
             }
 
     SESSION_STATE["current_lesson_plan"] = lesson_plan

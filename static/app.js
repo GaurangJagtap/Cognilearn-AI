@@ -33,6 +33,8 @@ const state = {
   currentFlashcardIndex: 0,
   isFlashcardFlipped: false,
   taxonomyTree: null,
+  mindmapMode: 'tree',
+  pipelineFlow: [],
   lastReport: null,
   lastQuizResults: null
 };
@@ -196,7 +198,10 @@ async function loadSampleLesson() {
   document.getElementById('param-lang').value = "en";
   document.getElementById('param-time').value = "20";
   document.getElementById('raw-text-input').value = 
-    "Chapter 4 Electricity and Magnetism: Current is the flow of charge (Ampere). Voltage is electrical pressure (Volts). Ohm's Law states V = I * R.";
+`I. Electric Current & Charge Flow: Electric current (I) is the rate of flow of electric charges measured in Amperes through a conductive medium.
+II. Electrical Potential & Voltage: Voltage (V) represents electrical potential difference and energy pressure driving electron migration across a circuit.
+III. Ohm's Law & Resistance: Electrical resistance (R) opposes current flow, establishing the foundational relationship V = I * R.
+IV. Circuit Topology & Power: Series and parallel network configurations determine equivalent resistance and branch current distribution.`;
 
   await startLessonGeneration();
 }
@@ -1296,6 +1301,7 @@ async function loadBonusFeatures() {
 
     document.getElementById('notes-content-box').textContent = data.study_notes || "";
     state.taxonomyTree = data.taxonomy_tree;
+    state.pipelineFlow = data.pipeline_flow || [];
 
     drawMindMapCanvas();
   } catch (err) {
@@ -1362,6 +1368,51 @@ function copyStudyNotes() {
   });
 }
 
+function setMindmapMode(mode) {
+  state.mindmapMode = mode;
+  const btnTree = document.getElementById('btn-mm-tree');
+  const btnPipe = document.getElementById('btn-mm-pipeline');
+  if (btnTree && btnPipe) {
+    if (mode === 'tree') {
+      btnTree.className = 'px-3 py-1 rounded-md text-xs font-semibold transition-all bg-sky-600 text-white shadow-xs flex items-center gap-1';
+      btnPipe.className = 'px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1';
+    } else {
+      btnTree.className = 'px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1';
+      btnPipe.className = 'px-3 py-1 rounded-md text-xs font-semibold transition-all bg-sky-600 text-white shadow-xs flex items-center gap-1';
+    }
+  }
+  drawMindMapCanvas();
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2, align = 'center') {
+  if (!text) return 0;
+  ctx.textAlign = align;
+  const words = text.split(' ');
+  let line = '';
+  let lines = [];
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      lines.push(line.trim());
+      line = words[n] + ' ';
+      if (lines.length >= maxLines - 1) break;
+    } else {
+      line = testLine;
+    }
+  }
+  lines.push(line.trim());
+
+  const totalBlockH = (lines.length - 1) * lineHeight;
+  const startY = y - totalBlockH / 2;
+
+  lines.forEach((l, i) => {
+    ctx.fillText(l, x, startY + i * lineHeight);
+  });
+  return lines.length;
+}
+
 function drawMindMapCanvas() {
   const canvas = document.getElementById('mindmap-canvas');
   if (!canvas) return;
@@ -1374,85 +1425,275 @@ function drawMindMapCanvas() {
   const tree = state.taxonomyTree || {
     name: state.lessonPlan?.topic_or_chapter || "Study Module",
     children: [
-      { name: "Pillar 1: Guidelines", children: [{ name: "Policy Scope" }, { name: "Compliance" }] },
-      { name: "Pillar 2: Implementation", children: [{ name: "Execution Steps" }, { name: "Resource Allocation" }] }
+      { name: "Pillar 1: System Scope", children: [{ name: "Architecture Specs" }, { name: "Input Baseline" }] },
+      { name: "Pillar 2: Execution", children: [{ name: "Processing Pipeline" }, { name: "Operational Engine" }] }
     ]
   };
 
+  if (state.mindmapMode === 'pipeline') {
+    drawPipelineFlowchart(ctx, w, h, tree);
+  } else {
+    drawTreeMindMap(ctx, w, h, tree);
+  }
+}
+
+function drawTreeMindMap(ctx, w, h, tree) {
+  // Background
+  ctx.fillStyle = '#090d16';
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle radial glow
+  const radGrad = ctx.createRadialGradient(w / 2, 60, 10, w / 2, 60, 380);
+  radGrad.addColorStop(0, 'rgba(56, 189, 248, 0.1)');
+  radGrad.addColorStop(1, 'rgba(9, 13, 22, 0)');
+  ctx.fillStyle = radGrad;
+  ctx.fillRect(0, 0, w, h);
+
   const rootX = w * 0.5;
-  const rootY = 50;
+  const rootY = 48;
+  const rootW = Math.min(340, w * 0.45);
+  const rootH = 50;
 
   // Root Node
   ctx.fillStyle = '#0f172a';
   ctx.strokeStyle = '#6366f1';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.roundRect(rootX - 100, rootY - 20, 200, 40, 10);
+  ctx.roundRect(rootX - rootW / 2, rootY - rootH / 2, rootW, rootH, 12);
   ctx.fill();
   ctx.stroke();
 
+  // Root Badge
+  ctx.fillStyle = '#818cf8';
+  ctx.font = 'bold 9px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('DOCUMENT KNOWLEDGE TAXONOMY', rootX, rootY - 10);
+
+  // Root Title with word-wrapping
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 12px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(tree.name.slice(0, 26).toUpperCase(), rootX, rootY + 5);
+  wrapCanvasText(ctx, (tree.name || "Study Module").toUpperCase(), rootX, rootY + 9, rootW - 24, 14, 2, 'center');
 
   const children = tree.children || [];
   const numChildren = children.length;
   if (numChildren === 0) return;
 
-  const childY = h * 0.45;
-  const stepX = w / (numChildren + 1);
+  const colW = w / numChildren;
+  const childY = 155;
+  const palette = ['#38bdf8', '#a855f7', '#34d399', '#f59e0b', '#ec4899'];
 
   children.forEach((c, idx) => {
-    const cx = stepX * (idx + 1);
+    const cx = colW * idx + colW / 2;
+    const col = palette[idx % palette.length];
 
-    // Connecting line to root
-    ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+    // Smooth Bezier line to root
+    ctx.strokeStyle = col + '77';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(rootX, rootY + 20);
-    ctx.lineTo(cx, childY - 18);
+    ctx.moveTo(rootX, rootY + rootH / 2);
+    ctx.bezierCurveTo(rootX, (rootY + childY) / 2, cx, (rootY + childY) / 2, cx, childY - 26);
     ctx.stroke();
 
-    // Child Card
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
-    ctx.strokeStyle = '#38bdf8';
+    // Pillar Card
+    const cardW = Math.min(colW - 20, 200);
+    const cardH = 52;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.96)';
+    ctx.strokeStyle = col;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.roundRect(cx - 70, childY - 18, 140, 36, 8);
+    ctx.roundRect(cx - cardW / 2, childY - cardH / 2, cardW, cardH, 10);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#38bdf8';
+    // Pillar Badge
+    ctx.fillStyle = col;
+    ctx.font = 'bold 9px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`PILLAR 0${idx + 1}`, cx, childY - 12);
+
+    // Pillar Title
+    ctx.fillStyle = '#f8fafc';
     ctx.font = 'bold 11px Inter, sans-serif';
-    ctx.fillText(c.name.slice(0, 20), cx, childY + 4);
+    wrapCanvasText(ctx, c.name, cx, childY + 7, cardW - 16, 13, 2, 'center');
 
-    // Sub-children
+    // Sub-children: Stack vertically within this column's lane so they never overlap neighbors
     const subChildren = c.children || [];
-    const subY = h * 0.8;
-    const subStep = 130 / Math.max(1, subChildren.length);
-    subChildren.forEach((sc, sIdx) => {
-      const sx = cx - 40 + sIdx * subStep;
+    const subStartY = childY + 44;
+    const subCardW = Math.min(colW - 24, 190);
+    const subCardH = 32;
 
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+    subChildren.forEach((sc, sIdx) => {
+      const sy = subStartY + sIdx * 46;
+
+      // Connecting line from pillar to sub-node
+      ctx.strokeStyle = col + '55';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(cx, childY + 18);
-      ctx.lineTo(sx, subY - 14);
+      ctx.moveTo(cx, childY + cardH / 2);
+      ctx.lineTo(cx, sy - subCardH / 2);
       ctx.stroke();
 
-      ctx.fillStyle = '#1e293b';
-      ctx.strokeStyle = '#34d399';
+      // Sub-node card
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+      ctx.strokeStyle = col + '88';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(sx - 45, subY - 14, 90, 28, 6);
+      ctx.roundRect(cx - subCardW / 2, sy - subCardH / 2, subCardW, subCardH, 6);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = '#34d399';
+      // Accent dot
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(cx - subCardW / 2 + 12, sy, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sub-node full readable text
+      ctx.fillStyle = '#e2e8f0';
       ctx.font = '10px Inter, sans-serif';
-      ctx.fillText(sc.name.slice(0, 14), sx, subY + 4);
+      wrapCanvasText(ctx, sc.name, cx + 8, sy, subCardW - 32, 12, 2, 'center');
     });
+  });
+}
+
+function drawPipelineFlowchart(ctx, w, h, tree) {
+  // Background
+  ctx.fillStyle = '#070b14';
+  ctx.fillRect(0, 0, w, h);
+
+  // Flowchart title
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = 'bold 10px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('⚡ DOCUMENT EXECUTION PIPELINE & PROCESS FLOW', 30, 32);
+
+  const steps = (state.pipelineFlow && state.pipelineFlow.length > 0)
+    ? state.pipelineFlow
+    : (tree.children || []).map((c, i) => ({
+        step: i + 1,
+        title: c.name,
+        visual_type: 'diagram',
+        sub_steps: (c.children || []).map(sc => sc.name),
+        summary: `Core execution phase ${i + 1} for ${c.name}`
+      }));
+
+  const numSteps = Math.min(steps.length, 5);
+  if (numSteps === 0) return;
+
+  const padX = 30;
+  const colW = (w - padX * 2) / numSteps;
+  const cardW = Math.min(colW - 28, 195);
+  const cardH = 340;
+  const cardY = 55;
+  const palette = ['#38bdf8', '#a855f7', '#34d399', '#f59e0b', '#ec4899'];
+
+  steps.slice(0, numSteps).forEach((st, idx) => {
+    const cx = padX + colW * idx + colW / 2;
+    const cardX = cx - cardW / 2;
+    const col = palette[idx % palette.length];
+
+    // Pipeline Step Card
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // Header Badge
+    ctx.fillStyle = col + '25';
+    ctx.beginPath();
+    ctx.roundRect(cardX + 10, cardY + 12, cardW - 20, 24, 6);
+    ctx.fill();
+
+    ctx.fillStyle = col;
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`PHASE 0${idx + 1} • ${(st.visual_type || 'PROCESS').toUpperCase()}`, cx, cardY + 28);
+
+    // Step Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px Inter, sans-serif';
+    wrapCanvasText(ctx, st.title, cx, cardY + 62, cardW - 24, 15, 2, 'center');
+
+    // Divider Line
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cardX + 12, cardY + 84);
+    ctx.lineTo(cardX + cardW - 12, cardY + 84);
+    ctx.stroke();
+
+    // Sub-components / Operational Modules
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 9px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('CORE MECHANISMS & DATA:', cardX + 14, cardY + 102);
+
+    const subSteps = st.sub_steps || [];
+    subSteps.slice(0, 3).forEach((sub, sIdx) => {
+      const capsuleY = cardY + 115 + sIdx * 44;
+
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.8)';
+      ctx.strokeStyle = col + '55';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(cardX + 10, capsuleY, cardW - 20, 36, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Check bullet
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(cardX + 22, capsuleY + 18, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Substep label
+      ctx.fillStyle = '#f1f5f9';
+      ctx.font = '10px Inter, sans-serif';
+      wrapCanvasText(ctx, sub, cardX + 32, capsuleY + 18, cardW - 48, 12, 2, 'left');
+    });
+
+    // Deliverable / Metric footer
+    const formulaText = st.key_formula || st.summary || `${st.title} Specification`;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    ctx.strokeStyle = '#34d399';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(cardX + 8, cardY + cardH - 50, cardW - 16, 38, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#34d399';
+    ctx.font = '9px monospace';
+    wrapCanvasText(ctx, `✓ ${formulaText}`, cx, cardY + cardH - 31, cardW - 24, 11, 2, 'center');
+
+    // Connecting Arrow to Next Step
+    if (idx < numSteps - 1) {
+      const nextCardX = padX + colW * (idx + 1) + colW / 2 - cardW / 2;
+      const startAx = cardX + cardW;
+      const endAx = nextCardX;
+      const midAy = cardY + 60;
+
+      // Pipe Line
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(startAx, midAy);
+      ctx.lineTo(endAx, midAy);
+      ctx.stroke();
+
+      // Directional Arrowhead
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.moveTo(endAx, midAy);
+      ctx.lineTo(endAx - 7, midAy - 5);
+      ctx.lineTo(endAx - 7, midAy + 5);
+      ctx.closePath();
+      ctx.fill();
+    }
   });
 }
 

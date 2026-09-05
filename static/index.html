@@ -299,32 +299,36 @@
                 </p>
               </div>
 
-              <!-- Explanation Mode Switcher (Concise vs Detailed) -->
+              <!-- Expanded Rich Explanation Studio -->
               <div class="mt-3 space-y-2">
-                <div class="flex items-center justify-between pb-1 border-b border-slate-200">
-                  <span class="text-[11px] font-bold text-slate-600 uppercase">Explanation Depth</span>
-                  <div class="flex p-0.5 bg-slate-200 rounded-md">
-                    <button onclick="setExplanationMode('concise')" id="btn-exp-concise" class="px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all bg-white text-slate-900 shadow-xs">Concise</button>
-                    <button onclick="setExplanationMode('detailed')" id="btn-exp-detailed" class="px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all text-slate-600 hover:text-slate-900">Detailed</button>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <span class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-sky-600"></i> Pedagogical Breakdown
+                  </span>
+                  <div class="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+                    <button onclick="setExplanationMode('concise')" id="btn-exp-concise" class="px-3 py-1 rounded-md text-xs font-semibold transition-all bg-white text-slate-900 shadow-xs">Key Takeaways</button>
+                    <button onclick="setExplanationMode('detailed')" id="btn-exp-detailed" class="px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">Deep Analysis</button>
                   </div>
                 </div>
 
-                <div class="p-3 bg-white rounded-lg border border-slate-200 overflow-y-auto max-h-[130px]">
-                  <p id="section-explanation-text" class="text-xs text-slate-800 leading-relaxed"></p>
+                <!-- Rich Multi-Paragraph Explanation Container -->
+                <div class="p-4 bg-white rounded-xl border border-slate-200 overflow-y-auto max-h-[220px] shadow-inner space-y-2">
+                  <div id="section-explanation-text" class="text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap"></div>
                 </div>
                 
-                <div class="p-3 bg-sky-50/80 rounded-lg border border-sky-200/90">
-                  <span class="text-[11px] font-bold text-sky-900 flex items-center gap-1">
-                    <i data-lucide="lightbulb" class="w-3 h-3 text-sky-600"></i> Practical Example
+                <!-- Callout Box for Real-World Application / Analogy -->
+                <div class="p-3.5 bg-sky-50/90 rounded-xl border border-sky-200/90 space-y-1">
+                  <span class="text-[11px] font-bold text-sky-900 flex items-center gap-1.5">
+                    <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-sky-600"></i> Real-World Application & Case Study
                   </span>
-                  <p id="section-example-text" class="text-xs text-sky-950 mt-1 leading-relaxed"></p>
+                  <p id="section-example-text" class="text-xs text-sky-950 leading-relaxed font-medium"></p>
                 </div>
               </div>
             </div>
 
             <div class="pt-3 border-t border-slate-200">
-              <button onclick="openCheckpointModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-xs shadow-sm flex items-center justify-center gap-2 transition-colors">
-                <i data-lucide="help-circle" class="w-4 h-4"></i> Verify Concept Mastery (Checkpoint)
+              <button onclick="openCheckpointModal()" class="btn-primary w-full py-2.5 rounded-xl font-semibold text-xs shadow-md flex items-center justify-center gap-2">
+                <i data-lucide="help-circle" class="w-4 h-4"></i> Verify Concept Mastery (Interactive Checkpoint)
               </button>
             </div>
           </div>
@@ -585,10 +589,26 @@
           </div>
         </div>
 
-        <!-- TAB 2: MIND MAP -->
+        <!-- TAB 2: MIND MAP / FLOWCHART -->
         <div id="bonus-tab-mindmap" class="hidden space-y-4">
-          <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800 h-96 relative flex items-center justify-center overflow-hidden shadow-inner">
-            <canvas id="mindmap-canvas" width="700" height="360" class="w-full h-full object-contain"></canvas>
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <span class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-sky-600"></i> Dynamic Document-Adaptive Flowchart
+              </span>
+              <p class="text-[11px] text-slate-500">Automatically structures concepts and process pipelines extracted from the uploaded document</p>
+            </div>
+            <div class="flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200 gap-1">
+              <button onclick="setMindmapMode('tree')" id="btn-mm-tree" class="px-3 py-1 rounded-md text-xs font-semibold transition-all bg-sky-600 text-white shadow-xs flex items-center gap-1">
+                <i data-lucide="network" class="w-3 h-3"></i> Concept Map
+              </button>
+              <button onclick="setMindmapMode('pipeline')" id="btn-mm-pipeline" class="px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                <i data-lucide="workflow" class="w-3 h-3"></i> Process Flowchart
+              </button>
+            </div>
+          </div>
+          <div class="p-3 sm:p-4 bg-slate-950 rounded-2xl border border-slate-800 min-h-[460px] relative flex items-center justify-center overflow-x-auto shadow-2xl">
+            <canvas id="mindmap-canvas" width="960" height="460" class="w-full h-auto max-h-[460px] object-contain"></canvas>
           </div>
         </div>
 

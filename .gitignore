@@ -28,3 +28,4 @@ storage/uploads/*
 *.swp
 .DS_Store
 Thumbs.db
+scratch/

@@ -7,11 +7,14 @@ from typing import List
 from backend.app.core.chunking import chunk_text
 from backend.app.core.embeddings import global_vector_store
 
-def ingest_document(text: str, chunk_size: int = 200, overlap: int = 30) -> int:
+def ingest_document(text: str, chunk_size: int = 200, overlap: int = 30, reset: bool = True) -> int:
     """
     Chunks document text and indexes into the RAG vector store.
+    Clears existing vector store by default to avoid cross-document pollution.
     Returns the number of chunks indexed.
     """
+    if reset:
+        global_vector_store.clear()
     chunks = chunk_text(text, chunk_size=chunk_size, overlap=overlap)
     if chunks:
         global_vector_store.add_texts(chunks)

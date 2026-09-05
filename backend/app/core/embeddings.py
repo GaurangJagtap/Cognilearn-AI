@@ -16,6 +16,11 @@ class VectorStore:
         self.documents: List[str] = []
         self.metadata: List[Dict[str, Any]] = []
 
+    def clear(self):
+        """Reset and clear all indexed documents and metadata."""
+        self.documents = []
+        self.metadata = []
+
     def add_texts(self, texts: List[str], metadatas: List[Dict[str, Any]] = None):
         """Add text chunks and metadata to the vector store."""
         for i, text in enumerate(texts):
