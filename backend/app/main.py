@@ -102,9 +102,12 @@ def orchestrate_full_lesson_pipeline(
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    is_prod = os.environ.get("RENDER") is not None or os.environ.get("ENVIRONMENT") == "production"
     print("\n=============================================================")
-    print(" AI Learning Platform Application Server")
-    print(" Open in Browser: http://localhost:8000  OR  http://127.0.0.1:8000")
+    print(f" AI Learning Platform Application Server (Port {port})")
+    print(f" Open in Browser: http://localhost:{port}  OR  http://127.0.0.1:{port}")
     print("=============================================================\n")
-    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=port, reload=not is_prod)
 
