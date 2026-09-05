@@ -9,4 +9,6 @@ In accordance with hackathon submission guidelines, the following known limitati
 2. **Local Vector Database Scale**:
    - The RAG pipeline uses an in-memory/SQLite vector store optimized for quick hackathon deployment on individual textbook chapters (~50-100 pages). For enterprise multi-gigabyte document libraries, a remote vector cluster (e.g. Pinecone/Weaviate) can be plugged in seamlessly.
 3. **Avatar Processing API Rate Limits**:
-   - In offline development mode, the orchestrator uses deterministic video stubs to allow offline integration testing without incurring API latency or rate limits.
+   - In offline development mode, the orchestrator uses deterministic video stubs and SVG canvas avatars to allow offline integration testing without incurring API latency or rate limits.
+4. **Offline Speech Synthesis Fallback**:
+   - If network connectivity is unavailable or external TTS keys are omitted, the platform automatically switches to browser-native SpeechSynthesis or synthesized tone tracks to ensure zero lesson interruption.

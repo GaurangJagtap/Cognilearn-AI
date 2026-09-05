@@ -150,7 +150,33 @@ def generate_report(quiz_results: list[dict]) -> dict:
 ```
 
 #### C. API Endpoints (`backend/app/api/`)
-Wires all backend modules into FastAPI routes (`/upload`, `/generate-lesson-plan`, `/interact`, `/assessment`).
+Wires all backend modules into FastAPI routes:
+- `/api/upload-document`: File parser for PDF, DOCX, PPTX, TXT.
+- `/api/generate-lesson-plan`: Multi-section structured curriculum generator.
+- `/api/current-lesson`: Fetches the active lesson payload.
+- `/api/switch-language`: Mid-lesson language switching with state preservation.
+- `/api/evaluate`: Checkpoint misconception evaluation.
+- `/api/study-tools`: Active recall flashcards, dynamic concept taxonomy tree, and process flowchart.
+
+#### D. Study Tools & Dynamic Visualization Contract
+```json
+{
+  "topic": "Electricity Fundamentals",
+  "flashcards": [
+    { "id": "fc_1", "front": "What is Current?", "back": "Rate of flow of charge.", "example": "Water in a pipe." }
+  ],
+  "taxonomy_tree": {
+    "name": "Electricity Fundamentals",
+    "children": [
+      { "name": "Current & Voltage", "children": [{ "name": "Ampere" }, { "name": "Potential Difference" }] }
+    ]
+  },
+  "pipeline_flow": [
+    { "step": 1, "title": "Current & Voltage", "visual_type": "diagram", "sub_steps": ["Ampere", "Potential Difference"], "summary": "Core electrical principles." }
+  ],
+  "study_notes": "Comprehensive key takeaways..."
+}
+```
 
 ---
 

@@ -266,6 +266,11 @@ def get_study_tools():
         "study_notes": "\n".join(notes_lines)
     }
 
+@router.get("/bonus/flashcards")
+async def get_bonus_flashcards():
+    """Backwards-compatible alias for study tools flashcards."""
+    return await get_study_tools()
+
 def get_default_sample_lesson() -> dict:
     sample_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "docs", "sample_lesson_plan.json")
     if os.path.exists(sample_file):
