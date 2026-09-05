@@ -2,7 +2,14 @@
 AI Learning Platform Main Entrypoint & Master Orchestrator
 """
 
+import sys
 import os
+
+# Ensure the project root directory is always on sys.path for cloud hosts like Render
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 from typing import Dict, Any, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
